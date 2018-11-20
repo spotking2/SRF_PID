@@ -1,14 +1,12 @@
 package org.usfirst.frc.team3826.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class SRF_PID { //v1.1.1
 	/*	Fixed instance overwrite problem
 	 *  Untested
-	 * 
-	 * 
-	 * 
 	 */
 	
 	private int P = 0, I = 1, D = 2;
@@ -18,10 +16,25 @@ public class SRF_PID { //v1.1.1
 	private boolean reversed = false;
 	private double max = 1, min = -1;
 	private double lastTime = 0;
-	private Joystick xbox;
-
 	private double[] initialK = new double[3];
 	private double[] mult = new double[] {1,1,1};
+	
+	//Tuner
+	private Joystick xbox;
+	int kValue = 0;
+	int adjustP = 0;
+	int adjustI = 0;
+	int adjustD = 0;
+	boolean adjusted = false;
+	int[] multPID = new int[] {adjustP, adjustI, adjustD};
+	
+	boolean letUp1 = true;						//A
+	boolean letUp2 = true;						//B
+	boolean letUp3 = true;						//X
+	boolean letUp4 = true;						//Y
+	boolean letUp7 = true;						//Back
+	
+	String kValueName = "P";
 	
 	public SRF_PID(Joystick trollPID) {
 		xbox = trollPID;
@@ -114,15 +127,67 @@ public class SRF_PID { //v1.1.1
 		mult[I]+=adjustI;
 		mult[D]+=adjustD;
 	}
+
+	public void run() {
+		if(xbox.getRawButton(1) && letUp1) 		//A
+		{
+			multPID[kValue] -= 1;
+			letUp1 = false;	
+		} 
+		else if(xbox.getRawButton(2) && letUp2) 	//B
+		{
+			multPID[kValue] += 1;
+			letUp2 = false;
+		}
+		else if(xbox.getRawButton(3) && letUp3) 	//X
+		{
+			kValue++;
+			
+			if(kValue==0)
+				kValueName = "P";
+			else if(kValue==1)
+				kValueName = "I";
+			else if(kValue==2)
+				kValueName = "D";
+			else {
+				kValue = 0;
+				kValueName = "P";
+			}
+			letUp3 = false;
+			
+		}
+		else if(xbox.getRawButton(4) && letUp4)		//Y
+		{
+			multPID[kValue] += .1;
+			letUp4 = false;
+		}
+		else if(xbox.getRawButton(7) && letUp7)		//Back
+		{
+			multPID[kValue] -= .1;
+		}
 	
-	public void smartDashPrint() {
+		if(adjusted){
+			adjustMult(adjustP, adjustI, adjustD);
+			adjustP = 0;
+			adjustI = 0;
+			adjustD = 0;
+		}
+		
+		if(!xbox.getRawButton(1))			//A
+			letUp1 = true;
+		if(!xbox.getRawButton(2))			//B
+			letUp2 = true;
+		if(!xbox.getRawButton(3))			//X
+			letUp3 = true;
+		if(!xbox.getRawButton(4))			//Y
+			letUp4 = true;
+		if(!xbox.getRawButton(7))			//Back
+			letUp7 = true;
+		
 		SmartDashboard.putNumber("P value", k[1]);
 		SmartDashboard.putNumber("I value", k[2]);
 		SmartDashboard.putNumber("D value", k[3]);
-	}
-	
-	public void run() {
-		
+		SmartDashboard.putString("Value Being Changed", kValueName);
 	}
 	
 }
