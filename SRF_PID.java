@@ -9,8 +9,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class SRF_PID { //v1.1.3
 	/*	Fixed instance overwrite problem
 	 *
-	 *  IMPORTANT: THE DEFAULT BUTTON VALUES NEED TO BE DEFINED
-	 *
 	 *  Untested
 	 *  Consider adding every PID into an array in a single object?
 	 *  This could be done by adding a second dimension to k and doing the equals sign part of it's definition in SRF_PID
