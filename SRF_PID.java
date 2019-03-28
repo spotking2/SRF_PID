@@ -6,10 +6,11 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-public class SRF_PID { //v1.1.3
+import com.ctre.phoenix.motorcontrol.can.*;
+
+public class SRF_PID { //v1.1.4
 	/*	Fixed instance overwrite problem
-	 *
-	 *  Untested
+
 	 *  Consider adding every PID into an array in a single object?
 	 *  This could be done by adding a second dimension to k and doing the equals sign part of it's definition in SRF_PID
 	 *  I'm not sure if that last part is acceptable yet
@@ -18,7 +19,7 @@ public class SRF_PID { //v1.1.3
 	 *  
 	 *  What should be called instead of setValues() in undo of controlPID() as setValues no longer exists?
 	 *  
-	 *  Test Dial
+	 *  Added automatic TalonSRX PID management
 	 */
 	
 	public SRF_PID(Joystick js, double kP, double kI, double kD) {
@@ -83,6 +84,15 @@ public class SRF_PID { //v1.1.3
 	int currentQuadrant;	//The Current quadrant the stick is in									   ---|---
 							//																			3 | 4
 	double dg;
+
+	//that talonSRX that gets updated
+	TalonSRX talon = null;
+
+	//a method that sets this object as having a talonSRX to manage
+	public void setTalon(TalonSRX talonInput) {
+		talon = talonInput;
+	}
+
 	//a method that will manage the cache of previous changes
 	public void updateUndo(int gain, double val)
 	{
@@ -363,6 +373,13 @@ public class SRF_PID { //v1.1.3
 			letUpPreset100 = false;
 		} else if(!j.getRawButton(preset100Button)) {
 			letUpPreset100 = true;
+		}
+
+		//updates the values in the TalonSRX if it has been defined
+		if(talon != null) {
+			talon.config_kP(0, k[0]);
+			talon.config_kI(0, k[1]);
+			talon.config_kP(0, k[2]);
 		}
 	}
 }
