@@ -8,8 +8,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import com.ctre.phoenix.motorcontrol.can.*;
 
-public class SRF_PID { //v1.1.4
+public class SRF_PID { //v1.1.5
 	/*	Fixed instance overwrite problem
+
+		Untested
+
+		Now all manipulation of k is done through setGain
 
 	 *  Consider adding every PID into an array in a single object?
 	 *  This could be done by adding a second dimension to k and doing the equals sign part of it's definition in SRF_PID
@@ -130,22 +134,23 @@ public class SRF_PID { //v1.1.4
 	public void setGain(int gain, double value)
 	{
 		k[gain] = value;
+		setTalon();
 	}
 	
 	//sets the value of all three gains
 	public void setPID(double nP, double nI, double nD)
 	{
-		k[P] = nP;
-		k[I] = nI;
-		k[D] = nD;		
+		setGain(P, nP);
+		setGain(I, nI);
+		setGain(D, nD);
 	}
 	
 	//adds or subtracts to all three gains
 	public void adjustPID(double adjustP, double adjustI, double adjustD)
 	{
-		k[P]+=adjustP;
-		k[I]+=adjustI;
-		k[D]+=adjustD;
+		setGain(P, k[P]+adjustP);
+		setGain(I, k[I]+adjustI);
+		setGain(D, k[D]+adjustD);
 	}
 	
 	public void setSetpoint(double target)
@@ -331,7 +336,7 @@ public class SRF_PID { //v1.1.4
 		if(j.getRawButton(applyButton) && letUpApply) {
 			errorSum = 0;
 			isUpdated[currentGain] = true;
-			k[currentGain] *= mult[currentGain];
+			setGain(currentGain, k[currentGain]*mult[currentGain]);
 			updateUndo(currentGain,k[currentGain]);
 			letUpApply = false;
 		} else if(!j.getRawButton(applyButton)) {
@@ -376,6 +381,10 @@ public class SRF_PID { //v1.1.4
 		}
 
 		//updates the values in the TalonSRX if it has been defined
+		//setTalon();
+	}
+
+	public void setTalon(){
 		if(talon != null) {
 			talon.config_kP(0, k[0]);
 			talon.config_kI(0, k[1]);
