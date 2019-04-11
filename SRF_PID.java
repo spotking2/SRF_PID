@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import com.ctre.phoenix.motorcontrol.can.*;
 
-public class SRF_PID { //v1.1.5
+public class SRF_PID { //v1.1.6
 	/*	Fixed instance overwrite problem
 
 		Untested
@@ -84,10 +84,13 @@ public class SRF_PID { //v1.1.5
 									//Starts as the Arcsine or inverse sine of yCoor then becomes the final angle in degrees and finally the percentage based on the angle in degrees
 	float dead = .25f;		//Size of dead band around joystick    range: 0-1
 	int stickRotations = 0;	//The number of times the stick as completed a full rotation 
-	int lastQuadrant;		//last quadrant of the unit circle the stick was in, Arranged like this: 	2 | 1
-	int currentQuadrant;	//The Current quadrant the stick is in									   ---|---
+	double lastAngle;		//last quadrant of the unit circle the stick was in, Arranged like this: 	2 | 1
+							//																		   ---|---
 							//																			3 | 4
 	double dg;
+
+	int axisy = 1;	
+	int axisx = 0;
 
 	//that talonSRX that gets updated
 	TalonSRX talon = null;
@@ -278,13 +281,42 @@ public class SRF_PID { //v1.1.5
 			
 			
 		//joystick (Dial) - Left Stick
-		int axisy = 1;	//I have no idea what the axis number is so im putting this in as a place holder(Replace all) and so it can be changed quickly
-		int axisx = 0;	//same as above
-		if(j.getRawAxis(axisx) > dead || j.getRawAxis(axisx) < dead*-1 || j.getRawAxis(axisy) > dead || j.getRawAxis(axisy) < dead*-1) {
+		if(Math.abs(j.getRawAxis(axisx)) > dead || Math.abs(j.getRawAxis(axisy)) > dead) {
 			
+			//Takes point and converts it to an an agle in degrees
+			finDegree = Math.atan2(j.getRawAxis(axisy), j.getRawAxis(axisx));//gets Angle between pi and -pi
+			if(finDegree < 0) {
+				finDegree += 2*Math.PI;//turns -pi to positive value out of 2 pi
+			}
+			Math.toDegrees(finDegree);
+
+			//Tracks the number of full rotations that has been done
+			if(lastAngle < 90 && finDegree >= 90)
+				stickRotations++;
+			else if(lastAngle >= 90 && finDegree < 90)
+				stickRotations--;
+			lastAngle = finDegree;
+
+			//converts angle start point to top of the circle
+			if(finDegree >= 90)
+				finDegree -= 90;
+			else
+				finDegree += 270;
+
+			//changes finDegree from degrees to the final percentage
+			if(stickRotations >= 0)
+				finDegree = finDegree/3.6 + 100*stickRotations;
+			else
+				finDegree /= 3.6*Math.pow(10,stickRotations*-1);
+			
+			mult[currentGain] = finDegree/100;
+
+		} else {
+			lastAngle = 0;
+		}
 			//This converts any point that doesn't fall on the border of the unit Circle into a point on it by finding
 			//the intersection of the hypotenuse of the angle created and the circle
-			if(j.getRawAxis(axisx) == 0 && -j.getRawAxis(axisy) > 0 ) {
+			/*if(j.getRawAxis(axisx) == 0 && -j.getRawAxis(axisy) > 0 ) {
 				xCoor = 0;
 				yCoor = 1;
 			} else if(j.getRawAxis(axisx) == 0 && -j.getRawAxis(axisy) < 0 ) {
@@ -330,7 +362,7 @@ public class SRF_PID { //v1.1.5
 			
 		} else if(lastQuadrant != 0) {
 			lastQuadrant = 0;
-		}
+		}*/
 		
 		//apply - applies value right and then updateUndo is called (Dial + presets)
 		if(j.getRawButton(applyButton) && letUpApply) {
