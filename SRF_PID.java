@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import com.ctre.phoenix.motorcontrol.can.*;
 
-public class SRF_PID { //v1.1.6
+public class SRF_PID { //v1.1.7
 	/*	Fixed instance overwrite problem
 
 		Untested
@@ -284,24 +284,25 @@ public class SRF_PID { //v1.1.6
 		if(Math.abs(j.getRawAxis(axisx)) > dead || Math.abs(j.getRawAxis(axisy)) > dead) {
 			
 			//Takes point and converts it to an an agle in degrees
-			finDegree = Math.atan2(j.getRawAxis(axisy), j.getRawAxis(axisx));//gets Angle between pi and -pi
+			finDegree = Math.atan2(-j.getRawAxis(axisy), j.getRawAxis(axisx));//gets Angle between pi and -pi
+			
 			if(finDegree < 0) {
 				finDegree += 2*Math.PI;//turns -pi to positive value out of 2 pi
 			}
-			Math.toDegrees(finDegree);
-
-			//Tracks the number of full rotations that has been done
-			if(lastAngle < 90 && finDegree >= 90)
-				stickRotations++;
-			else if(lastAngle >= 90 && finDegree < 90)
-				stickRotations--;
-			lastAngle = finDegree;
+			finDegree = 360*(finDegree/(2*Math.PI));
 
 			//converts angle start point to top of the circle
 			if(finDegree >= 90)
 				finDegree -= 90;
 			else
 				finDegree += 270;
+
+			//Tracks the number of full rotations that has been done
+			if(lastAngle > 340 && finDegree < 20)
+				stickRotations++;
+			else if(lastAngle < 20 && finDegree > 340)
+				stickRotations--;
+			lastAngle = finDegree;
 
 			//changes finDegree from degrees to the final percentage
 			if(stickRotations >= 0)
@@ -314,61 +315,13 @@ public class SRF_PID { //v1.1.6
 		} else {
 			lastAngle = 0;
 		}
-			//This converts any point that doesn't fall on the border of the unit Circle into a point on it by finding
-			//the intersection of the hypotenuse of the angle created and the circle
-			/*if(j.getRawAxis(axisx) == 0 && -j.getRawAxis(axisy) > 0 ) {
-				xCoor = 0;
-				yCoor = 1;
-			} else if(j.getRawAxis(axisx) == 0 && -j.getRawAxis(axisy) < 0 ) {
-				xCoor = 0;
-				yCoor = -1;
-			} else {
-				slope = (-j.getRawAxis(axisy))/j.getRawAxis(axisx);
-				xCoor = 1/(Math.sqrt(Math.pow(slope,2) + 1));
-				yCoor = xCoor * slope;
-				xCoor = j.getRawAxis(0);
-			}
-			//finds angle in degrees using yCoor
-			finDegree = Math.toDegrees(Math.asin(yCoor));
-			dg = finDegree;
-			//determines what quadrant the stick is in
-			if (finDegree > 0 && xCoor > 0) {
-				finDegree +=  270;
-				currentQuadrant = 1;
-			}else if(finDegree < 0 && xCoor < 0) {
-				finDegree = (90+finDegree);
-				currentQuadrant = 2;
-			} else if(finDegree > 0 && xCoor <0) {
-				finDegree = 90 + finDegree;
-				currentQuadrant = 3;
-			} else if(finDegree < 0) {
-				finDegree = 270 + finDegree;
-				currentQuadrant = 4;
-			}
-			//updates stickRotations
-			if(lastQuadrant == 1 && currentQuadrant == 2)
-				stickRotations++;
-			else if(lastQuadrant == 2 && currentQuadrant == 1)
-				stickRotations--;
-			lastQuadrant = currentQuadrant;
-			
-			//changes finDegree from degrees to the final percentage
-			if(stickRotations >= 0)
-				finDegree = finDegree/3.6 + 100*stickRotations;
-			else
-				finDegree /= 3.6*Math.pow(10,stickRotations*-1);
-			
-			mult[currentGain] = finDegree/100;
-			
-		} else if(lastQuadrant != 0) {
-			lastQuadrant = 0;
-		}*/
 		
 		//apply - applies value right and then updateUndo is called (Dial + presets)
 		if(j.getRawButton(applyButton) && letUpApply) {
 			errorSum = 0;
 			isUpdated[currentGain] = true;
-			setGain(currentGain, k[currentGain]*mult[currentGain]);
+			if(mult[currentGain] != 0)
+				setGain(currentGain, k[currentGain]*mult[currentGain]);
 			updateUndo(currentGain,k[currentGain]);
 			letUpApply = false;
 		} else if(!j.getRawButton(applyButton)) {
